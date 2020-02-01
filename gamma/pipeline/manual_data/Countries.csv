@@ -1,0 +1,93 @@
+﻿iso_code,co_code,RB,country
+AF,AFCO,RBB,Afghanistan
+DZ,DZCO,RBC,Algeria
+AO,AOCO,RBJ,Angola
+AM,AMCO,RBC,Armenia
+BD,BDCO,RBB,Bangladesh
+BJ,BJCO,RBD,Benin
+BT,BTCO,RBB,Bhutan
+BO,BOCO,RBP,Bolivia (Plurinational State of)
+BA,BACO,RBC,Bosnia and Herzegovina
+BF,BFCO,RBD,Burkina Faso
+BI,BICO,RBN,Burundi
+KH,KHCO,RBB,Cambodia
+CM,CMCO,RBD,Cameroon
+CF,CFCO,RBD,Central African Republic
+TD,TDCO,RBD,Chad
+CO,COCO,RBP,Colombia
+CG,CGCO,RBJ,Congo
+CI,CICO,RBD,Côte d'Ivoire
+CU,CUCO,RBP,Cuba
+KP,KPCO,RBB,Democratic People's Republic of Korea
+CD,CDCO,RBJ,Democratic Republic of the Congo
+DJ,DJCO,RBN,Djibouti
+DO,DOCO,RBP,Dominican Republic
+EC,ECCO,RBP,Ecuador
+EG,EGCO,RBC,Egypt
+SV,SVCO,RBP,El Salvador
+ER,ERCO,RBN,Eritrea
+SZ,SZCO,RBJ,Eswatini
+ET,ETCO,RBN,Ethiopia
+GM,GMCO,RBD,Gambia
+GH,GHCO,RBD,Ghana
+GT,GTCO,RBP,Guatemala
+GN,GNCO,RBD,Guinea
+GW,GWCO,RBD,Guinea-Bissau
+HT,HTCO,RBP,Haiti
+HN,HNCO,RBP,Honduras
+IN,INCO,RBB,India
+ID,IDCO,RBB,Indonesia
+IR,IRCO,RBC,Iran (Islamic Republic of)
+IQ,IQCO,RBC,Iraq
+JP,JPCO,RBB,Japan
+JO,JOCO,RBC,Jordan
+KE,KECO,RBN,Kenya
+KG,KGCO,RBC,Kyrgyzstan
+LA,LACO,RBB,Lao People's Democratic Republic
+LB,LBCO,RBC,Lebanon
+LS,LSCO,RBJ,Lesotho
+LR,LRCO,RBD,Liberia
+LY,LYCO,RBC,Libya
+MG,MGCO,RBJ,Madagascar
+MW,MWCO,RBJ,Malawi
+ML,MLCO,RBD,Mali
+MR,MRCO,RBD,Mauritania
+MX,MXCO,RBP,Mexico
+MA,MACO,RBC,Morocco
+MZ,MZCO,RBJ,Mozambique
+MM,MMCO,RBB,Myanmar
+NA,NACO,RBJ,Namibia
+NP,NPCO,RBB,Nepal
+NI,NICO,RBP,Nicaragua
+NE,NECO,RBD,Niger
+NG,NGCO,RBD,Nigeria
+PK,PKCO,RBB,Pakistan
+PS,PSCO,RBC,Palestine
+PA,PACO,RBP,Panama
+PG,PGCO,RBB,Papua New Guinea
+PY,PYCO,RBP,Paraguay
+PH,PHCO,RBB,Philippines
+RU,RUCO,RBC,Russian Federation
+RW,RWCO,RBN,Rwanda
+ST,STCO,RBD,Sao Tome and Principe
+SN,SNCO,RBD,Senegal
+SL,SLCO,RBD,Sierra Leone
+SO,SOCO,RBN,Somalia
+SS,SSCO,RBN,South Sudan
+LK,LKCO,RBB,Sri Lanka
+SD,SDCO,RBC,Sudan
+SY,SYCO,RBC,Syrian Arab Republic
+TJ,TJCO,RBC,Tajikistan
+TH,THCO,RBB,Thailand
+TL,TLCO,RBB,Timor-Leste
+TG,TGCO,RBD,Togo
+TN,TNCO,RBC,Tunisia
+TR,TRCO,RBC,Turkey
+UG,UGCO,RBN,Uganda
+UA,UACO,RBC,Ukraine
+TZ,TZCO,RBJ,United Republic of Tanzania
+VU,VUCO,RBB,Vanuatu
+YE,YECO,RBC,Yemen
+ZM,ZMCO,RBJ,Zambia
+ZW,ZWCO,RBJ,Zimbabwe
+PE,PECO,RBP,Peru

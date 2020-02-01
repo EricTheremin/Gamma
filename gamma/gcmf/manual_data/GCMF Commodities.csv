@@ -1,0 +1,330 @@
+﻿Corridor,Commodity,GCMF commodity
+Asia: Far East,Beans,0
+Asia: Far East,Biscuits,0
+Asia: Far East,Canned Fish,0
+Asia: Far East,Chickpeas,0
+Asia: Far East,Dried Fruits,0
+Asia: Far East,Dried Skimmed Milk,0
+Asia: Far East,Dried Whole Milk,0
+Asia: Far East,High Energy Biscuits,1
+Asia: Far East,Iodized Salt,0
+Asia: Far East,Lentils,0
+Asia: Far East,LNS-LQ,1
+Asia: Far East,LNS-MQ,1
+Asia: Far East,LNS-SQ,0
+Asia: Far East,Maize,0
+Asia: Far East,Micronutrition Powder,0
+Asia: Far East,Peanut Butter,0
+Asia: Far East,Peas,0
+Asia: Far East,Rice,1
+Asia: Far East,Rice Soya Blend,0
+Asia: Far East,Split Peas,1
+Asia: Far East,Sugar,0
+Asia: Far East,Super Cereal (WSB+),1
+Asia: Far East,Super Cereal Plus (WSB++),1
+Asia: Far East,Vegetable Oil,1
+Asia: Far East,Wheat,0
+Asia: Western Asia,Beans,0
+Asia: Western Asia,Buckwheat,0
+Asia: Western Asia,Dried Fruits,0
+Asia: Western Asia,High Energy Biscuits,1
+Asia: Western Asia,Iodized Salt,0
+Asia: Western Asia,Lentils,0
+Asia: Western Asia,LNS-LQ,1
+Asia: Western Asia,LNS-MQ,1
+Asia: Western Asia,Micronutrition Powder,0
+Asia: Western Asia,Micronutrition Tablets,0
+Asia: Western Asia,Peas,0
+Asia: Western Asia,Rice,0
+Asia: Western Asia,RUTF,0
+Asia: Western Asia,Split Peas,1
+Asia: Western Asia,Sugar,0
+Asia: Western Asia,Super Cereal (CSB+),0
+Asia: Western Asia,Super Cereal (WSB+),1
+Asia: Western Asia,Super Cereal Plus (CSB++),0
+Asia: Western Asia,Super Cereal Plus (WSB++),1
+Asia: Western Asia,Vegetable Oil,1
+Asia: Western Asia,Wheat,0
+Asia: Western Asia,Wheat Flour,1
+East Africa: Lower Horn,Beans,1
+East Africa: Lower Horn,Biscuits,0
+East Africa: Lower Horn,BP5 Emergency Rations,0
+East Africa: Lower Horn,Bulgur Wheat,0
+East Africa: Lower Horn,Canned Fish,0
+East Africa: Lower Horn,Dried Fruits,0
+East Africa: Lower Horn,Dried Skimmed Milk,0
+East Africa: Lower Horn,High Energy Biscuits,1
+East Africa: Lower Horn,Iodized Salt,0
+East Africa: Lower Horn,Lentils,0
+East Africa: Lower Horn,LNS-LQ,1
+East Africa: Lower Horn,LNS-MQ,1
+East Africa: Lower Horn,Maize,1
+East Africa: Lower Horn,Maize Meal,0
+East Africa: Lower Horn,Micronutrition Powder,0
+East Africa: Lower Horn,Micronutrition Tablets,0
+East Africa: Lower Horn,Pea Wheat Blend,0
+East Africa: Lower Horn,Peas,0
+East Africa: Lower Horn,Rice,0
+East Africa: Lower Horn,RUTF,0
+East Africa: Lower Horn,Sorghum/Millet,1
+East Africa: Lower Horn,Soya-Fortified Maize Meal,0
+East Africa: Lower Horn,Split Peas,1
+East Africa: Lower Horn,Sugar,0
+East Africa: Lower Horn,Super Cereal (CSB+),1
+East Africa: Lower Horn,Super Cereal Plus (CSB++),1
+East Africa: Lower Horn,Uht Milk,0
+East Africa: Lower Horn,Unimix,0
+East Africa: Lower Horn,Vegetable Oil,1
+East Africa: Lower Horn,Wheat,0
+East Africa: Lower Horn,Wheat Flour,0
+East Africa: Upper Horn,Beans,1
+East Africa: Upper Horn,Chickpeas,0
+East Africa: Upper Horn,Dried Fruits,0
+East Africa: Upper Horn,Dried Skimmed Milk,0
+East Africa: Upper Horn,Faffa,0
+East Africa: Upper Horn,High Energy Biscuits,1
+East Africa: Upper Horn,Iodized Salt,0
+East Africa: Upper Horn,Lentils,0
+East Africa: Upper Horn,LNS-LQ,1
+East Africa: Upper Horn,LNS-MQ,1
+East Africa: Upper Horn,Maize,1
+East Africa: Upper Horn,Maize Meal,0
+East Africa: Upper Horn,Micronutrition Powder,0
+East Africa: Upper Horn,Peas,0
+East Africa: Upper Horn,Rice,0
+East Africa: Upper Horn,Sorghum/Millet,1
+East Africa: Upper Horn,Split Peas,1
+East Africa: Upper Horn,Sugar,0
+East Africa: Upper Horn,Super Cereal (CSB+),1
+East Africa: Upper Horn,Super Cereal (WSB+),0
+East Africa: Upper Horn,Super Cereal Plus (CSB++),1
+East Africa: Upper Horn,Super Cereal Plus (WSB++),0
+East Africa: Upper Horn,Vegetable Oil,1
+East Africa: Upper Horn,Wheat,1
+East Africa: Upper Horn,Wheat Flour,0
+Latin America: Central America,Beans,0
+Latin America: Central America,Bulgur Wheat,0
+Latin America: Central America,Dried Fruits,0
+Latin America: Central America,Dried Skimmed Milk,0
+Latin America: Central America,High Energy Biscuits,1
+Latin America: Central America,Iodized Salt,0
+Latin America: Central America,Lentils,0
+Latin America: Central America,LNS-LQ,1
+Latin America: Central America,LNS-MQ,1
+Latin America: Central America,LNS-SQ,0
+Latin America: Central America,Maize,0
+Latin America: Central America,Maize Meal,0
+Latin America: Central America,Micronutrition Powder,0
+Latin America: Central America,Nuts,0
+Latin America: Central America,Oat,0
+Latin America: Central America,Peas,0
+Latin America: Central America,Rations,0
+Latin America: Central America,Rice,0
+Latin America: Central America,Split Peas,0
+Latin America: Central America,Sugar,0
+Latin America: Central America,Super Cereal (CSB+),0
+Latin America: Central America,Super Cereal Plus (CSB++),0
+Latin America: Central America,Vegetable Oil,0
+Latin America: Central America,Vegetables Fresh,0
+Latin America: Central America,Vitacereal,0
+Latin America: Central America,Wheat Flour,0
+Latin America: South America,Beans,0
+Latin America: South America,Biscuits,0
+Latin America: South America,Canned Fish,0
+Latin America: South America,Coffee,0
+Latin America: South America,Dried Whole Milk,0
+Latin America: South America,High Energy Biscuits,1
+Latin America: South America,High Energy Supplements,0
+Latin America: South America,Iodized Salt,0
+Latin America: South America,Lentils,0
+Latin America: South America,Maize,0
+Latin America: South America,Maize Meal,0
+Latin America: South America,Micronutrition Powder,0
+Latin America: South America,Oat,0
+Latin America: South America,Pasta,0
+Latin America: South America,Potato flakes,0
+Latin America: South America,Quinua,0
+Latin America: South America,Rations,0
+Latin America: South America,Rice,0
+Latin America: South America,Sugar,0
+Latin America: South America,Super Cereal (CSB+),0
+Latin America: South America,Uht Milk,0
+Latin America: South America,Vegetable Oil,0
+Latin America: South America,Wheat Flour,0
+Middle East,Beans,1
+Middle East,Canned Chicken,0
+Middle East,Canned Fish,0
+Middle East,Canned Pulses,1
+Middle East,Chickpeas,1
+Middle East,Dried Fruits,0
+Middle East,Halawa,0
+Middle East,High Energy Biscuits,1
+Middle East,Iodized Salt,0
+Middle East,Lentils,1
+Middle East,LNS-LQ,1
+Middle East,LNS-MQ,1
+Middle East,Peas,1
+Middle East,Rations,0
+Middle East,Rice,0
+Middle East,Split Peas,1
+Middle East,Sugar,1
+Middle East,Super Cereal (WSB+),1
+Middle East,Super Cereal Plus (CSB++),0
+Middle East,Super Cereal Plus (WSB++),0
+Middle East,Vegetable Oil,1
+Middle East,Wheat,1
+Middle East,Wheat Flour,1
+No GCMF Corridor,API,0
+No GCMF Corridor,Barley,0
+No GCMF Corridor,Beans,0
+No GCMF Corridor,Biscuits,0
+No GCMF Corridor,BP5 Emergency Rations,0
+No GCMF Corridor,Bread,0
+No GCMF Corridor,Buckwheat,0
+No GCMF Corridor,Bulgur Wheat,0
+No GCMF Corridor,Canned Chicken,0
+No GCMF Corridor,Canned Fish,0
+No GCMF Corridor,Canned Meat,0
+No GCMF Corridor,Canned Pulses,0
+No GCMF Corridor,Canned Vegetables,0
+No GCMF Corridor,Cheese,0
+No GCMF Corridor,Chickpeas,0
+No GCMF Corridor,Corn Soya Milk,0
+No GCMF Corridor,Crackers,0
+No GCMF Corridor,Dried Fruits,0
+No GCMF Corridor,Dried Skimmed Milk,0
+No GCMF Corridor,Dried Whole Milk,0
+No GCMF Corridor,Halawa,0
+No GCMF Corridor,High Energy Biscuits,1
+No GCMF Corridor,High Energy Supplements,0
+No GCMF Corridor,Iodized Salt,0
+No GCMF Corridor,Juice,0
+No GCMF Corridor,Lentils,0
+No GCMF Corridor,LNS-LQ,1
+No GCMF Corridor,LNS-MQ,1
+No GCMF Corridor,LNS-SQ,0
+No GCMF Corridor,Maize,0
+No GCMF Corridor,Maize Meal,0
+No GCMF Corridor,Micronutrition Powder,0
+No GCMF Corridor,Mineral Water,0
+No GCMF Corridor,Nuts,0
+No GCMF Corridor,Pasta,0
+No GCMF Corridor,Peanut Butter,0
+No GCMF Corridor,Peas,0
+No GCMF Corridor,Potato flakes,0
+No GCMF Corridor,Processed Tomato,0
+No GCMF Corridor,Rations,0
+No GCMF Corridor,Rice,0
+No GCMF Corridor,Rice Soya Blend,0
+No GCMF Corridor,RUTF,0
+No GCMF Corridor,Sorghum/Millet,0
+No GCMF Corridor,Spices,0
+No GCMF Corridor,Split Lentils,0
+No GCMF Corridor,Split Peas,0
+No GCMF Corridor,Sugar,0
+No GCMF Corridor,Super Cereal (CSB+),0
+No GCMF Corridor,Super Cereal (WSB+),0
+No GCMF Corridor,Super Cereal Plus (CSB++),0
+No GCMF Corridor,Super Cereal Plus (WSB++),0
+No GCMF Corridor,Tea,0
+No GCMF Corridor,Textured Soy Protein,0
+No GCMF Corridor,Tubers Fresh,0
+No GCMF Corridor,Uht Milk,0
+No GCMF Corridor,Vegetable Oil,0
+No GCMF Corridor,Vegetable Oil - Olive,0
+No GCMF Corridor,Vitacereal,0
+No GCMF Corridor,Wheat,0
+No GCMF Corridor,Wheat Flour,0
+No GCMF Corridor,Yeast,0
+Southern Africa,Beans,1
+Southern Africa,Canned Fish,0
+Southern Africa,Faffa,0
+Southern Africa,High Energy Biscuits,1
+Southern Africa,Iodized Salt,0
+Southern Africa,Lentils,0
+Southern Africa,LNS-LQ,1
+Southern Africa,LNS-MQ,1
+Southern Africa,LNS-SQ,0
+Southern Africa,Maize,1
+Southern Africa,Maize Meal,0
+Southern Africa,Micronutrition Powder,0
+Southern Africa,Peas,1
+Southern Africa,Rice,0
+Southern Africa,RUTF,0
+Southern Africa,Sorghum/Millet,0
+Southern Africa,Soya-Fortified Maize Meal,0
+Southern Africa,Split Peas,1
+Southern Africa,Sugar,0
+Southern Africa,Super Cereal (CSB+),1
+Southern Africa,Super Cereal Plus (CSB++),1
+Southern Africa,Therapeutic Milk,0
+Southern Africa,Vegetable Oil,1
+Southern Africa,Wheat,0
+Southern Africa,Wheat Flour,0
+West Africa: Eastern Area,Beans,1
+West Africa: Eastern Area,BP5 Emergency Rations,0
+West Africa: Eastern Area,Canned Fish,0
+West Africa: Eastern Area,Dried Fruits,0
+West Africa: Eastern Area,High Energy Biscuits,1
+West Africa: Eastern Area,Iodized Salt,0
+West Africa: Eastern Area,Lentils,0
+West Africa: Eastern Area,LNS-LQ,1
+West Africa: Eastern Area,LNS-MQ,1
+West Africa: Eastern Area,LNS-SQ,0
+West Africa: Eastern Area,Maize,0
+West Africa: Eastern Area,Maize Meal,0
+West Africa: Eastern Area,Micronutrition Powder,0
+West Africa: Eastern Area,Nuts,0
+West Africa: Eastern Area,Peas,0
+West Africa: Eastern Area,Rations,0
+West Africa: Eastern Area,Rice,1
+West Africa: Eastern Area,RUTF,0
+West Africa: Eastern Area,Sorghum/Millet,1
+West Africa: Eastern Area,Split Peas,1
+West Africa: Eastern Area,Sugar,0
+West Africa: Eastern Area,Super Cereal (CSB+),1
+West Africa: Eastern Area,Super Cereal (WSB+),0
+West Africa: Eastern Area,Super Cereal Plus (CSB++),1
+West Africa: Eastern Area,Vegetable Oil,1
+West Africa: Eastern Area,Wheat Flour,0
+West Africa: Nigeria,Beans,1
+West Africa: Nigeria,Iodized Salt,0
+West Africa: Nigeria,LNS-LQ,1
+West Africa: Nigeria,Maize,0
+West Africa: Nigeria,Rice,0
+West Africa: Nigeria,Sorghum/Millet,1
+West Africa: Nigeria,Split Peas,0
+West Africa: Nigeria,Super Cereal (CSB+),1
+West Africa: Nigeria,Super Cereal Plus (CSB++),1
+West Africa: Nigeria,Vegetable Oil,1
+West Africa: Western Area,Beans,1
+West Africa: Western Area,BP5 Emergency Rations,0
+West Africa: Western Area,Bulgur Wheat,0
+West Africa: Western Area,Canned Fish,0
+West Africa: Western Area,Canned Pulses,0
+West Africa: Western Area,Dried Fruits,0
+West Africa: Western Area,High Energy Biscuits,1
+West Africa: Western Area,High Energy Supplements,0
+West Africa: Western Area,Iodized Salt,0
+West Africa: Western Area,Lentils,0
+West Africa: Western Area,LNS-LQ,1
+West Africa: Western Area,LNS-MQ,1
+West Africa: Western Area,LNS-SQ,0
+West Africa: Western Area,Maize,0
+West Africa: Western Area,Maize Meal,0
+West Africa: Western Area,Micronutrition Powder,0
+West Africa: Western Area,Peanut Butter,0
+West Africa: Western Area,Peas,0
+West Africa: Western Area,Rations,0
+West Africa: Western Area,Rice,1
+West Africa: Western Area,RUTF,0
+West Africa: Western Area,Sorghum/Millet,1
+West Africa: Western Area,Split Lentils,0
+West Africa: Western Area,Split Peas,1
+West Africa: Western Area,Sugar,0
+West Africa: Western Area,Super Cereal (CSB+),1
+West Africa: Western Area,Super Cereal (WSB+),0
+West Africa: Western Area,Super Cereal Plus (CSB++),1
+West Africa: Western Area,Uht Milk,0
+West Africa: Western Area,Vegetable Oil,1
+West Africa: Western Area,Wheat,0

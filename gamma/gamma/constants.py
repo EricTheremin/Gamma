@@ -1,0 +1,5 @@
+
+USE_PALANTIR_CONNECTION = False
+
+DATE_FORMAT = '%Y-%m-%d'
+

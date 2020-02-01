@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% csrf_token %}
+    <meta charset="UTF-8">
+    <title>Load Page</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+</head>
+
+<body>
+
+    <script>
+        function LoadData() {
+            var request = $.ajax({
+                url: window.location,
+                type: "POST",
+                data: {
+                    'action': "load_data",
+                    'csrfmiddlewaretoken': '{{csrf_token}}'
+                }
+            });
+            request.done( function(json) {
+                console.log("loaded!")
+            });
+        }
+    </script>
+
+    <button onclick="LoadData()">Load</button>
+
+</body>
+</html>
