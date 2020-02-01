@@ -30,3 +30,4 @@ celerybeat.pid
 .vscode
 *.icloud
 .vscode
+gamma/.idea/workspace.xml
