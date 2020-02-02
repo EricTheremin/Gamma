@@ -16,6 +16,13 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="Python 3.7 (env)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="core" level="application" />
+    <orderEntry type="library" name="charts" level="application" />
+    <orderEntry type="library" name="animated" level="application" />
+    <orderEntry type="library" name="jquery" level="application" />
+    <orderEntry type="library" name="maps" level="application" />
+    <orderEntry type="library" name="worldLow" level="application" />
+    <orderEntry type="library" name="select2" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />

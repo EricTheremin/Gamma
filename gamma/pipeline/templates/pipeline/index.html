@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    {% csrf_token %}
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <!-- Meta, title, CSS, favicons, etc. -->
     <meta charset="utf-8">
@@ -42,157 +43,438 @@
     <script src="https://www.amcharts.com/lib/4/core.js"></script>
     <script src="https://www.amcharts.com/lib/4/charts.js"></script>
     <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="https://www.amcharts.com/lib/4/maps.js"></script>
+    <script src="https://www.amcharts.com/lib/4/geodata/worldLow.js"></script>
+
+    <!-- select2 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 
     <script>
 
+
+        am4core.useTheme(am4themes_animated);
+
+        let pipeline_chart = null;
+        let map = null;
+
+
+        // variables
+
+        let page_loading = true;
+
+        let pipeline_data = new Set();
+
+
+        let country_req_data = {};
+        let max_req = 1;
+        let max_shortfalls = 1;
+
+        let countries = new Set();
+        let country_rb = {};
+        let country_isos = new Set();
+        let rbs = new Set();
+        let wbss = new Set();
+        let commodities = new Set();
+
+        let selected_rb = null;
+        let selected_country = null;
+        let selected_wbs = null;
+        let selected_com = null;
+
+        let periods = [];
+        let display_pipeline_data = {};
+
+        {% for period in periods %}
+            periods.push("{{period.date_start|escapejs}}");
+        {% endfor %}
+
+        {% for rb in rbs %}
+            rbs.add("{{rb.name|escapejs}}");
+        {% endfor %}
+
+        {% for country in countries %}
+            iso_ = "{{country.iso_code|escapejs}}";
+            rb_ = "{{country.rb.name|escapejs}}";
+            countries.add({
+                "iso": iso_,
+                "name": "{{country.name|escapejs}}",
+                "rb": rb_
+            });
+            country_isos.add(iso_);
+            country_rb[iso_] = rb_;
+        {% endfor %}
+
+        {% for wbs in wbss %}
+            wbss.add({
+                "code":"{{wbs.code|escapejs}}",
+                "country": "{{wbs.country.iso_code|escapejs}}",
+            });
+        {% endfor %}
+
+        {% for com in commodities %}
+            commodities.add({
+                "name":"{{com.name|escapejs}}",
+                "p_name": "{{com.planning_name|escapejs}}",
+            });
+        {% endfor %}
+
+        {% for pip in pipeline %}
+            pipeline_data.add({
+                "country": "{{pip.country.iso_code|escapejs}}",
+                "wbs": "{{pip.wbs.code|escapejs}}",
+                "period": "{{pip.period.date_start|escapejs}}",
+                "commodity": "{{pip.commodity.name|escapejs}}",
+                "imp_reqs_mt": {{pip.implementation_reqs_mt}},
+                "imp_resourced_mt": {{pip.implementation_resourced_mt}},
+                "imp_reqs_fcr": {{pip.implementation_reqs_fcr}},
+                "imp_resourced_fcr": {{pip.implementation_resourced_fcr}}
+            });
+        {% endfor %}
+
+        function FilterRB(){
+            selected_rb = $("#rb_selector").val();
+            if(!page_loading){
+                UpdatePipelineDisplay()
+            }
+        }
+        function FilterCountry(){
+            selected_country = $("#country_selector").val();
+            if(!page_loading){
+                UpdatePipelineDisplay()
+            }
+        }
+        function FilterWBS(){
+            selected_wbs = $("#wbs_selector").val();
+            if(!page_loading){
+                UpdatePipelineDisplay()
+            }
+        }
+        function FilterCom(){
+            selected_com = $("#commodity_selector").val();
+            if(!page_loading){
+                UpdatePipelineDisplay()
+            }
+        }
+
+
+        function UpdatePipelineDisplay() {
+
+            for (let i = 0; i < periods.length; i++) {
+               display_pipeline_data[periods[i]] = {
+                    "imp_reqs_mt": 0,
+                    "imp_resourced_mt": 0,
+                    "imp_reqs_fcr": 0,
+                    "imp_resourced_fcr": 0
+                };
+            }
+
+            country_req_data = {};
+            for (let country of countries) {
+                country_req_data[country.iso] = {"imp_req": 0, "imp_shortfalls": 0};
+            }
+
+            for (let pip of pipeline_data) {
+                if (selected_com == null || selected_com === "" || selected_com === pip.commodity) {
+
+                    country_req_data[pip.country].imp_req = country_req_data[pip.country].imp_req + pip.imp_reqs_mt;
+                    country_req_data[pip.country].imp_shortfalls = country_req_data[pip.country].imp_shortfalls + (pip.imp_reqs_mt - pip.imp_resourced_mt);
+
+                    if ((selected_rb == null || selected_rb === "" || selected_rb === country_rb[pip.country]) && (selected_country == null || selected_country === "" || selected_country === pip.country) && (selected_wbs == null || selected_wbs === "" || selected_wbs === pip.wbs)) {
+                        display_pipeline_data[pip.period].imp_reqs_mt = display_pipeline_data[pip.period].imp_reqs_mt + pip.imp_reqs_mt;
+                        display_pipeline_data[pip.period].imp_resourced_mt = display_pipeline_data[pip.period].imp_resourced_mt + pip.imp_resourced_mt;
+                        display_pipeline_data[pip.period].imp_reqs_fcr = display_pipeline_data[pip.period].imp_reqs_fcr + pip.imp_reqs_fcr;
+                        display_pipeline_data[pip.period].imp_resourced_fcr = display_pipeline_data[pip.period].imp_resourced_fcr + pip.imp_resourced_fcr;
+                    }
+                }
+            }
+
+
+            // update pipeline chart data
+            for (let i = 0; i < periods.length; i++) {
+                let p = periods[i];
+                pipeline_chart.data[i] = {
+                    "date": p,
+                    "req": Math.round(display_pipeline_data[p].imp_reqs_mt),
+                    "resourced": Math.round(display_pipeline_data[p].imp_resourced_mt)
+                };
+            }
+            pipeline_chart.invalidateData();
+
+            max_req = 1;
+            max_shortfalls = 1;
+            for (let country of countries) {
+                if(max_req < country_req_data[country.iso].imp_req){
+                    max_req = country_req_data[country.iso].imp_req
+                }
+                if(max_shortfalls < country_req_data[country.iso].imp_shortfalls){
+                    max_shortfalls = country_req_data[country.iso].imp_shortfalls
+                }
+            }
+
+        }
+
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
         $(document).ready(function() {
 
-            InitiateTimelineChart()
-        });
+            // initiate the filter selectors
 
-         function InitiateTimelineChart() {
+            let rb_selector = $("#rb_selector");
+            rb_selector.select2();
+            rb_selector.select2({
+                placeholder: "All regional bureaux",
+                allowClear: true
+            });
+            for(let rb of rbs) {
+                rb_selector.append("<option value='" + rb + "'>" + rb + "</option>");
+            }
+            rb_selector.val(null).trigger('change');
 
-             // Themes begin
-            am4core.useTheme(am4themes_animated);
-            // Themes end
+            let country_selector = $("#country_selector");
+            country_selector.select2();
+            country_selector.select2({
+                placeholder: "All countries",
+                allowClear: true
+            });
+            for(let country of countries) {
+                country_selector.append("<option value='" + country.iso + "'>" + country.name + "</option>");
+            }
+            country_selector.val(null).trigger('change');
+
+            let wbs_selector = $("#wbs_selector");
+            wbs_selector.select2();
+            wbs_selector.select2({
+                placeholder: "All WBS elements",
+                allowClear: true
+            });
+            for(let wbs of wbss) {
+                wbs_selector.append("<option value='" + wbs.code + "'>" + wbs.code + "</option>");
+            }
+            $("#wbs_selector").val(null).trigger('change');
+
+            let commodity_selector = $("#commodity_selector");
+            commodity_selector.select2();
+            commodity_selector.select2({
+                placeholder: "All commodities",
+                allowClear: true
+            });
+            for(let com of commodities) {
+                commodity_selector.append("<option value='" + com.name + "'>" + com.name + "</option>");
+            }
+            commodity_selector.val(null).trigger('change');
+
+
+            /////// build pipeline chart
 
             // Create chart instance
-            var chart = am4core.create("timelineChartDiv", am4charts.XYChart);
+            pipeline_chart = am4core.create("timelineChartDiv", am4charts.XYChart);
 
             // Export
-            chart.exporting.menu = new am4core.ExportMenu();
+            pipeline_chart.exporting.menu = new am4core.ExportMenu();
 
-            // Data for both series
-            var data = [ {
-              "year": "2009",
-              "income": 23.5,
-              "expenses": 21.1
-            }, {
-              "year": "2010",
-              "income": 26.2,
-              "expenses": 30.5
-            }, {
-              "year": "2011",
-              "income": 30.1,
-              "expenses": 34.9
-            }, {
-              "year": "2012",
-              "income": 29.5,
-              "expenses": 31.1
-            }, {
-              "year": "2013",
-              "income": 30.6,
-              "expenses": 28.2,
-              "lineDash": "5,5",
-            }, {
-              "year": "2014",
-              "income": 34.1,
-              "expenses": 32.9,
-              "strokeWidth": 1,
-              "columnDash": "5,5",
-              "fillOpacity": 0.2,
-              "additional": "(projection)"
-            } ];
+            pipeline_chart.dateFormatter.inputDateFormat = "yyyy-MM-dd";
 
             /* Create axes */
-            var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
-            categoryAxis.dataFields.category = "year";
-            categoryAxis.renderer.minGridDistance = 30;
+            let dateAxis = pipeline_chart.xAxes.push(new am4charts.DateAxis());
+            dateAxis.start = 0;
+            dateAxis.end = 0.5;
+            dateAxis.keepSelection = true;
 
             /* Create value axis */
-            var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+            let valueAxis = pipeline_chart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.min = 0;
 
             /* Create series */
-            var columnSeries = chart.series.push(new am4charts.ColumnSeries());
-            columnSeries.name = "Income";
-            columnSeries.dataFields.valueY = "income";
-            columnSeries.dataFields.categoryX = "year";
+            let columnSeries = pipeline_chart.series.push(new am4charts.ColumnSeries());
+            columnSeries.name = "Resourced";
+            columnSeries.dataFields.valueY = "resourced";
+            columnSeries.dataFields.dateX = "date";
 
-            columnSeries.columns.template.tooltipText = "[#fff font-size: 15px]{name} in {categoryX}:\n[/][#fff font-size: 20px]{valueY}[/] [#fff]{additional}[/]"
+            columnSeries.columns.template.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
             columnSeries.columns.template.propertyFields.fillOpacity = "fillOpacity";
             columnSeries.columns.template.propertyFields.stroke = "stroke";
             columnSeries.columns.template.propertyFields.strokeWidth = "strokeWidth";
             columnSeries.columns.template.propertyFields.strokeDasharray = "columnDash";
             columnSeries.tooltip.label.textAlign = "middle";
+            columnSeries.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
+            columnSeries.fill = am4core.color("rgba(3, 88, 106, 0.5)");
 
-            var lineSeries = chart.series.push(new am4charts.LineSeries());
-            lineSeries.name = "Expenses";
-            lineSeries.dataFields.valueY = "expenses";
-            lineSeries.dataFields.categoryX = "year";
 
-            lineSeries.stroke = am4core.color("#fdd400");
+            let lineSeries = pipeline_chart.series.push(new am4charts.LineSeries());
+            lineSeries.name = "Implementation Requirements";
+            lineSeries.dataFields.valueY = "req";
+            lineSeries.dataFields.dateX = "date";
+
+            lineSeries.stroke = am4core.color("rgba(38, 185, 154, 0.5)");
             lineSeries.strokeWidth = 3;
             lineSeries.propertyFields.strokeDasharray = "lineDash";
             lineSeries.tooltip.label.textAlign = "middle";
 
-            var bullet = lineSeries.bullets.push(new am4charts.Bullet());
-            bullet.fill = am4core.color("#fdd400"); // tooltips grab fill from parent by default
-            bullet.tooltipText = "[#fff font-size: 15px]{name} in {categoryX}:\n[/][#fff font-size: 20px]{valueY}[/] [#fff]{additional}[/]"
-            var circle = bullet.createChild(am4core.Circle);
+            let bullet = lineSeries.bullets.push(new am4charts.Bullet());
+            bullet.fill = am4core.color("rgba(38, 185, 154, 0.5)"); // tooltips grab fill from parent by default
+            bullet.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
+            let circle = bullet.createChild(am4core.Circle);
             circle.radius = 4;
             circle.fill = am4core.color("#fff");
             circle.strokeWidth = 3;
 
-            chart.data = data;
+            // Create a horizontal scrollbar with previe and place it underneath the date axis
+            pipeline_chart.scrollbarX = new am4charts.XYChartScrollbar();
+            pipeline_chart.scrollbarX.series.push(columnSeries);
+            pipeline_chart.scrollbarX.series.push(lineSeries);
+            pipeline_chart.scrollbarX.parent = pipeline_chart.bottomAxesContainer;
+
+
+            /////// build world map
+
+            map = am4core.create("world-map-div", am4maps.MapChart);
+
+            // Set map definition
+            map.geodata = am4geodata_worldLow;
+
+            // Set projection
+            map.projection = new am4maps.projections.Orthographic();
+            map.panBehavior = "rotateLongLat";
+            map.deltaLatitude = -20;
+            map.padding(20,20,20,20);
+
+            // limits vertical rotation
+            map.adapter.add("deltaLatitude", function(delatLatitude){
+                return am4core.math.fitToRange(delatLatitude, -90, 90);
+            });
+
+            // Add zoom control
+            map.zoomControl = new am4maps.ZoomControl();
+
+            var homeButton = new am4core.Button();
+            homeButton.events.on("hit", function(){
+              map.goHome();
+            });
+
+            homeButton.icon = new am4core.Sprite();
+            homeButton.padding(7, 5, 7, 5);
+            homeButton.width = 30;
+            homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+            homeButton.marginBottom = 10;
+            homeButton.parent = map.zoomControl;
+            homeButton.insertBefore(map.zoomControl.plusButton);
+
+
+            // Create map polygon series
+            var polygonSeries = map.series.push(new am4maps.MapPolygonSeries());
+            // Make map load polygon (like country names) data from GeoJSON
+            polygonSeries.useGeodata = true;
+            polygonSeries.calculateVisualCenter = true;
+            polygonSeries.tooltip.background.fillOpacity = 0.2;
+            polygonSeries.tooltip.background.cornerRadius = 20;
+
+
+            // Configure series
+            var polygonTemplate = polygonSeries.mapPolygons.template;
+            //polygonTemplate.tooltipText = "{name}";
+            polygonTemplate.fill = am4core.color("rgba(3, 88, 106, 0.5)");
+            polygonTemplate.stroke = am4core.color("rgba(120, 120, 120, 0.5)");
+
+            polygonTemplate.strokeWidth = 0.5;
+            // ? polygonTemplate.nonScalingStroke = true;
+
+            polygonTemplate.propertyFields.id = "id";
+            polygonTemplate.tooltipPosition = "fixed";
+            polygonTemplate.fillOpacity = 1;
+
+            polygonTemplate.events.on("over", function (event) {
+              if (event.target.dummyData) {
+                event.target.dummyData.isHover = true;
+              }
+            });
+            polygonTemplate.events.on("out", function (event) {
+              if (event.target.dummyData) {
+                event.target.dummyData.isHover = false;
+              }
+            });
+
+            var graticuleSeries = map.series.push(new am4maps.GraticuleSeries());
+            graticuleSeries.mapLines.template.line.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
+            graticuleSeries.mapLines.template.line.strokeOpacity = 0.08;
+            graticuleSeries.fitExtent = false;
+
+            map.backgroundSeries.mapPolygons.template.polygon.fillOpacity = 0.1;
+            map.backgroundSeries.mapPolygons.template.polygon.fill = am4core.color("#454a58");
+
+            // Create hover state and set alternative fill color
+            var hs = polygonTemplate.states.create("hover");
+            //hs.properties.fill = map.colors.getIndex(0).brighten(-0.5);
+            hs.properties.fillOpacity = 1;
+            hs.properties.fill = am4core.color("rgba(38, 185, 154, 0.7)");
 
 
 
+            var circleSeries = map.series.push(new am4maps.MapPolygonSeries());
+            circleSeries.tooltip.background.fillOpacity = 0.5;
+            circleSeries.tooltip.background.cornerRadius = 20;
+            circleSeries.tooltip.autoTextColor = false;
+            circleSeries.tooltip.label.fill = am4core.color("#fff");
+            circleSeries.tooltip.dy = -5;
+
+            var circleTemplate = circleSeries.mapPolygons.template;
+            circleTemplate.fill = am4core.color("#2e4786");
+            circleTemplate.strokeOpacity = 0;
+            circleTemplate.fillOpacity = 0.6;
+            circleTemplate.tooltipPosition = "fixed";
 
 
-            {#selection_start = new Date(dateToday.getFullYear(), dateToday.getMonth() + 1, 1);#}
-            {#selection_end = new Date(dateToday.getFullYear(), dateToday.getMonth() + 2, 1);#}
-            {##}
-            {#guide_selection_dict['date'] = selection_start;#}
-            {#guide_selection_dict['toDate'] = selection_end;#}
-            {##}
-            {#var timelineChart = AmCharts.makeChart("timelineChartDiv",#}
-            {#    {#}
-            {#        "type": "serial",#}
-            {#        "balloonDateFormat": "MMM, YYYY",#}
-            {#        "categoryField": "date",#}
-            {#        "dataDateFormat": "YYYY-MM",#}
-            {#        "marginLeft": 19,#}
-            {#        "theme": "light",#}
-            {#        "categoryAxis": {#}
-                        {#"minPeriod": "MM",#}
-            {#            "parseDates": true,#}
-            {#            "guides": [guide_selection_dict]#}
-            {#        },#}
-            {#        "chartCursor": {#}
-                        {#"enabled": true,#}
-            {#            "categoryBalloonDateFormat": "MMM YYYY",#}
-                        {#"behavior": "selectX"#}
-            {#            "selectWithoutZooming": true,#}
-            {#        },#}
-            {#        /*"chartScrollbar": {#}
-            {#            "enabled": true#}
-            {#        },*/#}
-            {#        "trendLines": [],#}
-            {#        "graphs": [],#}
-            {#        "guides": [],#}
-            {#        "valueAxes": [#}
-            {#            {#}
-            {#                "id": "ValueAxis-1",#}
-            {#                "title": "Beneficiaries",#}
-            {#                "minimum": 0,#}
-            {#            }#}
-            {#        ],#}
-            {#        "allLabels": [],#}
-            {#        "balloon": {},#}
-            {#        "legend": {#}
-            {#            "enabled": true#}
-            {#        },#}
-            {#        "dataProvider": [],#}
-            {#        "creditsPosition": "bottom-right",#}
-				{#	"export": {#}
-				{#		"enabled": true#}
-				{#	}#}
-            {#    });#}
-            {#timelineChart.validateData();#}
-            {##}
-            {##}
+            var hs2 = circleSeries.mapPolygons.template.states.create("hover");
+            hs2.properties.fillOpacity = 1;
+            hs2.properties.fill = am4core.color("#2e4786");
 
-        }
+            polygonSeries.events.on("inited", function () {
+              polygonSeries.mapPolygons.each(function (mapPolygon) {
+                //var req = Math.round(country_req_data[mapPolygon.id]);
+                var country_shortfalls = 0;
+                if (country_isos.has(mapPolygon.id)) {
+                    country_shortfalls = Math.round(country_req_data[mapPolygon.id].imp_shortfalls);
+                }
+
+                if (country_shortfalls > 0) {
+                  var polygon = circleSeries.mapPolygons.create();
+                  polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 5 * Math.sqrt(country_shortfalls) / Math.sqrt(max_shortfalls));
+                  polygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": " + numberWithCommas(country_shortfalls) + " mt";
+                  mapPolygon.dummyData = polygon;
+                  polygon.events.on("over", function () {
+                    mapPolygon.isHover = true;
+                  });
+                  polygon.events.on("out", function () {
+                    mapPolygon.isHover = false;
+                  })
+                }
+                else {
+                  mapPolygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": no shortfalls";
+                  mapPolygon.fillOpacity = 0.3;
+                }
+
+              })
+            });
+
+            let animation;
+            setTimeout(function(){
+              animation = map.animate({property:"deltaLongitude", to:100000}, 20000000);
+            }, 3000);
+
+            map.seriesContainer.events.on("down", function(){
+            if(animation){
+              animation.stop();
+            }
+            });
+
+            UpdatePipelineDisplay();
+
+            page_loading = false
+        });
+
     </script>
 
   </head>
@@ -228,13 +510,14 @@
                 <ul class="nav side-menu">
                   <li><a><i class="fa fa-home"></i> Home <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
-                      <li><a href="index.html">Dashboard</a></li>
+                      <li><a href="/">Home</a></li>
 {#                      <li><a href="index2.html">Dashboard2</a></li>#}
 {#                      <li><a href="index3.html">Dashboard3</a></li>#}
                     </ul>
                   </li>
-                  <li><a><i class="fa fa-edit"></i> Forms <span class="fa fa-chevron-down"></span></a>
+                  <li><a><i class="fa fa-bar-chart-o"></i> Pipeline projections <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
+                        <li><a href="/pipeline">Pipeline overview</a></li>
 {#                      <li><a href="form.html">General Form</a></li>#}
 {#                      <li><a href="form_advanced.html">Advanced Components</a></li>#}
 {#                      <li><a href="form_validation.html">Form Validation</a></li>#}
@@ -243,7 +526,14 @@
 {#                      <li><a href="form_buttons.html">Form Buttons</a></li>#}
                     </ul>
                   </li>
-                  <li><a><i class="fa fa-desktop"></i> UI Elements <span class="fa fa-chevron-down"></span></a>
+                  <li><a><i class="fa fa-table"></i> Data <span class="fa fa-chevron-down"></span></a>
+                    <ul class="nav child_menu">
+                        <li><a href="/pipeline/load">Load data</a></li>
+{#                      <li><a href="tables.html">Tables</a></li>#}
+{#                      <li><a href="tables_dynamic.html">Table Dynamic</a></li>#}
+                    </ul>
+                  </li>
+                  <li><a><i class="fa fa-desktop"></i> Reports <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
 {#                      <li><a href="general_elements.html">General Elements</a></li>#}
 {#                      <li><a href="media_gallery.html">Media Gallery</a></li>#}
@@ -256,31 +546,25 @@
 {#                      <li><a href="calendar.html">Calendar</a></li>#}
                     </ul>
                   </li>
-                  <li><a><i class="fa fa-table"></i> Tables <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
-{#                      <li><a href="tables.html">Tables</a></li>#}
-{#                      <li><a href="tables_dynamic.html">Table Dynamic</a></li>#}
-                    </ul>
-                  </li>
-                  <li><a><i class="fa fa-bar-chart-o"></i> Data Presentation <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
+{#                  <li><a><i class="fa fa-bar-chart-o"></i> Data Presentation <span class="fa fa-chevron-down"></span></a>#}
+{#                    <ul class="nav child_menu">#}
 {#                      <li><a href="chartjs.html">Chart JS</a></li>#}
 {#                      <li><a href="chartjs2.html">Chart JS2</a></li>#}
 {#                      <li><a href="morisjs.html">Moris JS</a></li>#}
 {#                      <li><a href="echarts.html">ECharts</a></li>#}
 {#                      <li><a href="other_charts.html">Other Charts</a></li>#}
-                    </ul>
-                  </li>
-                  <li><a><i class="fa fa-clone"></i>Layouts <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
+{#                    </ul>#}
+{#                  </li>#}
+{#                  <li><a><i class="fa fa-clone"></i>Layouts <span class="fa fa-chevron-down"></span></a>#}
+{#                    <ul class="nav child_menu">#}
 {#                      <li><a href="fixed_sidebar.html">Fixed Sidebar</a></li>#}
 {#                      <li><a href="fixed_footer.html">Fixed Footer</a></li>#}
-                    </ul>
+{#                    </ul>#}
                   </li>
                 </ul>
               </div>
               <div class="menu_section">
-                <h3>Live On</h3>
+                <h3>Extra</h3>
                 <ul class="nav side-menu">
                   <li><a><i class="fa fa-bug"></i> Additional Pages <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
@@ -291,15 +575,15 @@
 {#                      <li><a href="profile.html">Profile</a></li>#}
                     </ul>
                   </li>
-                  <li><a><i class="fa fa-windows"></i> Extras <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
+{#                  <li><a><i class="fa fa-windows"></i> Extras <span class="fa fa-chevron-down"></span></a>#}
+{#                    <ul class="nav child_menu">#}
 {#                      <li><a href="page_403.html">403 Error</a></li>#}
 {#                      <li><a href="page_404.html">404 Error</a></li>#}
 {#                      <li><a href="page_500.html">500 Error</a></li>#}
 {#                      <li><a href="plain_page.html">Plain Page</a></li>#}
 {#                      <li><a href="login.html">Login Page</a></li>#}
 {#                      <li><a href="pricing_tables.html">Pricing Tables</a></li>#}
-                    </ul>
+{#                    </ul>#}
                 </ul>
               </div>
 
@@ -328,10 +612,10 @@
         <!-- top navigation -->
         <div class="top_nav">
           <div class="nav_menu">
-              <div class="nav toggle">
+            <div class="nav toggle">
                 <a id="menu_toggle"><i class="fa fa-bars"></i></a>
-              </div>
-              <nav class="nav navbar-nav">
+            </div>
+            <nav class="nav navbar-nav">
               <ul class=" navbar-right">
                 <li class="nav-item dropdown open" style="padding-left: 15px;">
                   <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">John Doe</a>
@@ -414,41 +698,141 @@
 
         <!-- page content -->
         <div class="right_col" role="main">
+
+
+            <!-- filters -->
+
+            <div class="row" style="display: inline-block;" >
+                <div>
+                    <div class="col-md-12 col-sm-12 ">
+
+                        <div class="x_content">
+
+                          <ul class="nav nav-pills" role="tablist">
+{#                            <li role="presentation" class="dropdown">#}
+{#                                <a id="drop4" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">Dropdown<span class="caret"></span></a>#}
+{#                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
+{#                                  <a class="dropdown-item" href="#">Action</a>#}
+{#                                  <a class="dropdown-item" href="#">Another action</a>#}
+{#                                  <a class="dropdown-item" href="#">Something else here</a>#}
+{#                                </div>#}
+{#                            </li>#}
+{#                            <li role="presentation" class="dropdown">#}
+{#                              <a id="drop5" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">#}
+{#                                          Dropdown#}
+{#                                          <span class="caret"></span>#}
+{#                                      </a>#}
+{#                                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
+{#                                          <a class="dropdown-item" href="#">Action</a>#}
+{#                                          <a class="dropdown-item" href="#">Another action</a>#}
+{#                                          <a class="dropdown-item" href="#">Something else here</a>#}
+{#                                        </div>#}
+{#                            </li>#}
+{#                            <li role="presentation" class="dropdown">#}
+{#                              <a id="drop6" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">#}
+{#                                          Dropdown#}
+{#                                          <span class="caret"></span>#}
+{#                                      </a>#}
+{#                                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
+{#                                          <a class="dropdown-item" href="#">Action</a>#}
+{#                                          <a class="dropdown-item" href="#">Another action</a>#}
+{#                                          <a class="dropdown-item" href="#">Something else here</a>#}
+{#                                        </div>#}
+{#                            </li>#}
+                            <li>
+                                <div style="margin-right: 20px">
+                                    <label>Regional Bureau</label>
+                                    <select id="rb_selector" onchange="FilterRB(this)" style="width: 150px;"></select>
+                                </div>
+                            </li>
+                              <li>
+                                <div style="margin-right: 20px">
+                                    <label>Country</label>
+                                    <select id="country_selector" onchange="FilterCountry(this)" style="width: 150px;"></select>
+                                </div>
+                            </li>
+                              <li>
+                                <div style="margin-right: 20px">
+                                    <label>WBS element</label>
+                                    <select id="wbs_selector" onchange="FilterWBS(this)" style="width: 150px;"></select>
+                                </div>
+                            </li>
+                            <li>
+                                <div style="margin-right: 20px">
+                                    <label>Commodity</label>
+                                    <select id="commodity_selector" onchange="FilterCom(this)" style="width: 150px;"></select>
+                                </div>
+                            </li>
+                          </ul>
+
+                        </div>
+
+
+
+{#                        <a id="country-dropdown" href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Countryyyy</a>#}
+{#                        <div class="dropdown-menu" aria-labelledby="country-dropdown">#}
+{#                          <a class="dropdown-item" href="#">abc</a>#}
+{#                          <a class="dropdown-item" href="#">def</a>#}
+{#                        </div>#}
+
+
+{#                        <ul>#}
+{#                            <li class="dropdown">#}
+{#                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>#}
+{#                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
+{#                                  <a class="dropdown-item" href="#">Settings 1</a>#}
+{#                                  <a class="dropdown-item" href="#">Settings 2</a>#}
+{#                                </div>#}
+{#                            </li>#}
+{#                            <li class="dropdown">#}
+{#                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>#}
+{#                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">#}
+{#                                  <a class="dropdown-item" href="#">Settings 1</a>#}
+{#                                  <a class="dropdown-item" href="#">Settings 2</a>#}
+{#                                </div>#}
+{#                            </li>#}
+{#                        </ul>#}
+
+                    </div>
+                </div>
+            </div>
+
           <!-- top tiles -->
-          <div class="row" style="display: inline-block;" >
-          <div class="tile_count">
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-user"></i> Total Users</span>
-              <div class="count">2500</div>
-              <span class="count_bottom"><i class="green">4% </i> From last Week</span>
+            <div class="row" style="display: inline-block;" >
+              <div class="tile_count">
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-user"></i> Total Users</span>
+                  <div class="count">2500</div>
+                  <span class="count_bottom"><i class="green">4% </i> From last Week</span>
+                </div>
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-clock-o"></i> Average Time</span>
+                  <div class="count">123.50</div>
+                  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>3% </i> From last Week</span>
+                </div>
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-user"></i> Total Males</span>
+                  <div class="count green">2,500</div>
+                  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
+                </div>
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-user"></i> Total Females</span>
+                  <div class="count">4,567</div>
+                  <span class="count_bottom"><i class="red"><i class="fa fa-sort-desc"></i>12% </i> From last Week</span>
+                </div>
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-user"></i> Total Collections</span>
+                  <div class="count">2,315</div>
+                  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
+                </div>
+                <div class="col-md-2 col-sm-4  tile_stats_count">
+                  <span class="count_top"><i class="fa fa-user"></i> Total Connections</span>
+                  <div class="count">7,325</div>
+                  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
+                </div>
+              </div>
             </div>
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-clock-o"></i> Average Time</span>
-              <div class="count">123.50</div>
-              <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>3% </i> From last Week</span>
-            </div>
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-user"></i> Total Males</span>
-              <div class="count green">2,500</div>
-              <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
-            </div>
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-user"></i> Total Females</span>
-              <div class="count">4,567</div>
-              <span class="count_bottom"><i class="red"><i class="fa fa-sort-desc"></i>12% </i> From last Week</span>
-            </div>
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-user"></i> Total Collections</span>
-              <div class="count">2,315</div>
-              <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
-            </div>
-            <div class="col-md-2 col-sm-4  tile_stats_count">
-              <span class="count_top"><i class="fa fa-user"></i> Total Connections</span>
-              <div class="count">7,325</div>
-              <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
-            </div>
-          </div>
-        </div>
+
           <!-- /top tiles -->
 
           <div class="row">
@@ -469,17 +853,17 @@
 
                 <div class="col-md-9 col-sm-9 ">
 {#                  <div id="chart_plot_01" class="demo-placeholder"></div>#}
-                    <div id="timelineChartDiv"></div>
+                    <div id="timelineChartDiv" style="width: 100%; height: 400px;"></div>
                 </div>
                 <div class="col-md-3 col-sm-3  bg-white">
                   <div class="x_title">
-                    <h2>Top Campaign Performance</h2>
+                    <h2>Top Shortfalls</h2>
                     <div class="clearfix"></div>
                   </div>
 
                   <div class="col-md-12 col-sm-12 ">
                     <div>
-                      <p>Facebook Campaign</p>
+                      <p>ABC</p>
                       <div class="">
                         <div class="progress progress_sm" style="width: 76%;">
                           <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="80"></div>
@@ -487,7 +871,7 @@
                       </div>
                     </div>
                     <div>
-                      <p>Twitter Campaign</p>
+                      <p>ABC</p>
                       <div class="">
                         <div class="progress progress_sm" style="width: 76%;">
                           <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="60"></div>
@@ -497,7 +881,7 @@
                   </div>
                   <div class="col-md-12 col-sm-12 ">
                     <div>
-                      <p>Conventional Media</p>
+                      <p>ABC</p>
                       <div class="">
                         <div class="progress progress_sm" style="width: 76%;">
                           <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="40"></div>
@@ -505,7 +889,7 @@
                       </div>
                     </div>
                     <div>
-                      <p>Bill boards</p>
+                      <p>ABC</p>
                       <div class="">
                         <div class="progress progress_sm" style="width: 76%;">
                           <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="50"></div>
@@ -524,7 +908,6 @@
           <br />
 
           <div class="row">
-
 
             <div class="col-md-4 col-sm-4 ">
               <div class="x_panel tile fixed_height_320">
@@ -633,89 +1016,11 @@
               </div>
             </div>
 
-            <div class="col-md-4 col-sm-4 ">
-              <div class="x_panel tile fixed_height_320 overflow_hidden">
-                <div class="x_title">
-                  <h2>Device Usage</h2>
-                  <ul class="nav navbar-right panel_toolbox">
-                    <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
-                    </li>
-                    <li class="dropdown">
-                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
-                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <a class="dropdown-item" href="#">Settings 1</a>
-                          <a class="dropdown-item" href="#">Settings 2</a>
-                        </div>
-                    </li>
-                    <li><a class="close-link"><i class="fa fa-close"></i></a>
-                    </li>
-                  </ul>
-                  <div class="clearfix"></div>
-                </div>
-                <div class="x_content">
-                  <table class="" style="width:100%">
-                    <tr>
-                      <th style="width:37%;">
-                        <p>Top 5</p>
-                      </th>
-                      <th>
-                        <div class="col-lg-7 col-md-7 col-sm-7 ">
-                          <p class="">Device</p>
-                        </div>
-                        <div class="col-lg-5 col-md-5 col-sm-5 ">
-                          <p class="">Progress</p>
-                        </div>
-                      </th>
-                    </tr>
-                    <tr>
-                      <td>
-                        <canvas class="canvasDoughnut" height="140" width="140" style="margin: 15px 10px 10px 0"></canvas>
-                      </td>
-                      <td>
-                        <table class="tile_info">
-                          <tr>
-                            <td>
-                              <p><i class="fa fa-square blue"></i>IOS </p>
-                            </td>
-                            <td>30%</td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <p><i class="fa fa-square green"></i>Android </p>
-                            </td>
-                            <td>10%</td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <p><i class="fa fa-square purple"></i>Blackberry </p>
-                            </td>
-                            <td>20%</td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <p><i class="fa fa-square aero"></i>Symbian </p>
-                            </td>
-                            <td>15%</td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <p><i class="fa fa-square red"></i>Others </p>
-                            </td>
-                            <td>30%</td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
-            </div>
 
-
-            <div class="col-md-4 col-sm-4 ">
-              <div class="x_panel tile fixed_height_320">
+            <div class="col-md-8 col-sm-8 ">
+              <div class="x_panel">
                 <div class="x_title">
-                  <h2>Quick Settings</h2>
+                  <h2>Countries <small>Shortfalls for the next xx months</small></h2>
                   <ul class="nav navbar-right panel_toolbox">
                     <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
                     </li>
@@ -733,37 +1038,40 @@
                 </div>
                 <div class="x_content">
                   <div class="dashboard-widget-content">
-                    <ul class="quick-list">
-                      <li><i class="fa fa-calendar-o"></i><a href="#">Settings</a>
-                      </li>
-                      <li><i class="fa fa-bars"></i><a href="#">Subscription</a>
-                      </li>
-                      <li><i class="fa fa-bar-chart"></i><a href="#">Auto Renewal</a> </li>
-                      <li><i class="fa fa-line-chart"></i><a href="#">Achievements</a>
-                      </li>
-                      <li><i class="fa fa-bar-chart"></i><a href="#">Auto Renewal</a> </li>
-                      <li><i class="fa fa-line-chart"></i><a href="#">Achievements</a>
-                      </li>
-                      <li><i class="fa fa-area-chart"></i><a href="#">Logout</a>
-                      </li>
-                    </ul>
+                    <div class="col-md-4 hidden-small">
+                      <h2 class="line_30">125.7k Views from 60 countries</h2>
 
-                    <div class="sidebar-widget">
-                        <h4>Profile Completion</h4>
-                        <canvas width="150" height="80" id="chart_gauge_01" class="" style="width: 160px; height: 100px;"></canvas>
-                        <div class="goal-wrapper">
-                          <span id="gauge-text" class="gauge-value pull-left">0</span>
-                          <span class="gauge-value pull-left">%</span>
-                          <span id="goal-text" class="goal-value pull-right">100%</span>
-                        </div>
+                      <table class="countries_list">
+                        <tbody>
+                          <tr>
+                            <td>United States</td>
+                            <td class="fs15 fw700 text-right">33%</td>
+                          </tr>
+                          <tr>
+                            <td>France</td>
+                            <td class="fs15 fw700 text-right">27%</td>
+                          </tr>
+                          <tr>
+                            <td>Germany</td>
+                            <td class="fs15 fw700 text-right">16%</td>
+                          </tr>
+                          <tr>
+                            <td>Spain</td>
+                            <td class="fs15 fw700 text-right">11%</td>
+                          </tr>
+                          <tr>
+                            <td>Britain</td>
+                            <td class="fs15 fw700 text-right">10%</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
+                    <div id="world-map-div" class="col-md-8 col-sm-12 " style="height:450px;"></div>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
-
 
           <div class="row">
             <div class="col-md-4 col-sm-4 ">
@@ -854,14 +1162,90 @@
 
             <div class="col-md-8 col-sm-8 ">
 
-
-
               <div class="row">
 
-                <div class="col-md-12 col-sm-12 ">
-                  <div class="x_panel">
+                <div class="col-md-6 col-sm-6 ">
+                  <div class="x_panel tile fixed_height_320 overflow_hidden">
                     <div class="x_title">
-                      <h2>Visitors location <small>geo-presentation</small></h2>
+                      <h2>Device Usage</h2>
+                      <ul class="nav navbar-right panel_toolbox">
+                        <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                        <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                              <a class="dropdown-item" href="#">Settings 1</a>
+                              <a class="dropdown-item" href="#">Settings 2</a>
+                            </div>
+                        </li>
+                        <li><a class="close-link"><i class="fa fa-close"></i></a>
+                        </li>
+                      </ul>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <table class="" style="width:100%">
+                        <tr>
+                          <th style="width:37%;">
+                            <p>Top 5</p>
+                          </th>
+                          <th>
+                            <div class="col-lg-7 col-md-7 col-sm-7 ">
+                              <p class="">Device</p>
+                            </div>
+                            <div class="col-lg-5 col-md-5 col-sm-5 ">
+                              <p class="">Progress</p>
+                            </div>
+                          </th>
+                        </tr>
+                        <tr>
+                          <td>
+                            <canvas class="canvasDoughnut" height="140" width="140" style="margin: 15px 10px 10px 0"></canvas>
+                          </td>
+                          <td>
+                            <table class="tile_info">
+                              <tr>
+                                <td>
+                                  <p><i class="fa fa-square blue"></i>IOS </p>
+                                </td>
+                                <td>30%</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <p><i class="fa fa-square green"></i>Android </p>
+                                </td>
+                                <td>10%</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <p><i class="fa fa-square purple"></i>Blackberry </p>
+                                </td>
+                                <td>20%</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <p><i class="fa fa-square aero"></i>Symbian </p>
+                                </td>
+                                <td>15%</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <p><i class="fa fa-square red"></i>Others </p>
+                                </td>
+                                <td>30%</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-sm-6 ">
+                  <div class="x_panel tile fixed_height_320">
+                    <div class="x_title">
+                      <h2>Quick Settings</h2>
                       <ul class="nav navbar-right panel_toolbox">
                         <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
                         </li>
@@ -879,35 +1263,30 @@
                     </div>
                     <div class="x_content">
                       <div class="dashboard-widget-content">
-                        <div class="col-md-4 hidden-small">
-                          <h2 class="line_30">125.7k Views from 60 countries</h2>
+                        <ul class="quick-list">
+                          <li><i class="fa fa-calendar-o"></i><a href="#">Settings</a>
+                          </li>
+                          <li><i class="fa fa-bars"></i><a href="#">Subscription</a>
+                          </li>
+                          <li><i class="fa fa-bar-chart"></i><a href="#">Auto Renewal</a> </li>
+                          <li><i class="fa fa-line-chart"></i><a href="#">Achievements</a>
+                          </li>
+                          <li><i class="fa fa-bar-chart"></i><a href="#">Auto Renewal</a> </li>
+                          <li><i class="fa fa-line-chart"></i><a href="#">Achievements</a>
+                          </li>
+                          <li><i class="fa fa-area-chart"></i><a href="#">Logout</a>
+                          </li>
+                        </ul>
 
-                          <table class="countries_list">
-                            <tbody>
-                              <tr>
-                                <td>United States</td>
-                                <td class="fs15 fw700 text-right">33%</td>
-                              </tr>
-                              <tr>
-                                <td>France</td>
-                                <td class="fs15 fw700 text-right">27%</td>
-                              </tr>
-                              <tr>
-                                <td>Germany</td>
-                                <td class="fs15 fw700 text-right">16%</td>
-                              </tr>
-                              <tr>
-                                <td>Spain</td>
-                                <td class="fs15 fw700 text-right">11%</td>
-                              </tr>
-                              <tr>
-                                <td>Britain</td>
-                                <td class="fs15 fw700 text-right">10%</td>
-                              </tr>
-                            </tbody>
-                          </table>
+                        <div class="sidebar-widget">
+                            <h4>Profile Completion</h4>
+                            <canvas width="150" height="80" id="chart_gauge_01" class="" style="width: 160px; height: 100px;"></canvas>
+                            <div class="goal-wrapper">
+                              <span id="gauge-text" class="gauge-value pull-left">0</span>
+                              <span class="gauge-value pull-left">%</span>
+                              <span id="goal-text" class="goal-value pull-right">100%</span>
+                            </div>
                         </div>
-                        <div id="world-map-gdp" class="col-md-8 col-sm-12 " style="height:230px;"></div>
                       </div>
                     </div>
                   </div>

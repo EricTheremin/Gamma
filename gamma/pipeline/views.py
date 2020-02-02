@@ -3,11 +3,18 @@ from django.http import HttpResponse, HttpResponseServerError
 import json
 from .load_data import *
 from gcmf.load_data import *
+from .apis import *
 
 
-def overview(request):
+def index(request):
     if request.method == "GET":
-        return render(request, 'pipeline/index.html', context={})
+        input_data = get_pipeline_context()
+        return render(request, 'pipeline/index.html', context=input_data)
+
+
+def load(request):
+    if request.method == "GET":
+        return render(request, 'pipeline/load_page.html', context={})
 
     if request.method == "POST":
         if request.POST.get('action') == 'load_data':
