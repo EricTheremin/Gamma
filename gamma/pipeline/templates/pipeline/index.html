@@ -77,6 +77,11 @@
         let wbss = new Set();
         let commodities = new Set();
 
+        let selectable_rbs = new Set();
+        let selectable_countries = new Set();
+        let selectable_wbss = new Set();
+        let selectable_commodities = new Set();
+
         let selected_rb = null;
         let selected_country = null;
         let selected_wbs = null;
@@ -85,12 +90,16 @@
         let periods = [];
         let display_pipeline_data = {};
 
+        let map_polygonSeries = null;
+        let map_circleSeries = null;
+
         {% for period in periods %}
             periods.push("{{period.date_start|escapejs}}");
         {% endfor %}
 
         {% for rb in rbs %}
             rbs.add("{{rb.name|escapejs}}");
+            selectable_rbs.add("{{rb.name|escapejs}}");
         {% endfor %}
 
         {% for country in countries %}
@@ -103,20 +112,25 @@
             });
             country_isos.add(iso_);
             country_rb[iso_] = rb_;
+            selectable_countries.add(iso_);
         {% endfor %}
 
         {% for wbs in wbss %}
+            code = "{{wbs.code|escapejs}}";
             wbss.add({
-                "code":"{{wbs.code|escapejs}}",
+                "code":code,
                 "country": "{{wbs.country.iso_code|escapejs}}",
             });
+            selectable_wbss.add(code);
         {% endfor %}
 
         {% for com in commodities %}
+            com_name = "{{com.name|escapejs}}";
             commodities.add({
-                "name":"{{com.name|escapejs}}",
+                "name": com_name,
                 "p_name": "{{com.planning_name|escapejs}}",
             });
+            selectable_commodities.add(com_name);
         {% endfor %}
 
         {% for pip in pipeline %}
@@ -135,25 +149,34 @@
         function FilterRB(){
             selected_rb = $("#rb_selector").val();
             if(!page_loading){
-                UpdatePipelineDisplay()
+                UpdatePipelineDisplay();
+                UpdateCountryFilter();
+                UpdateWBSFilter();
+                UpdateCommodityFilter();
             }
         }
         function FilterCountry(){
             selected_country = $("#country_selector").val();
             if(!page_loading){
-                UpdatePipelineDisplay()
+                UpdatePipelineDisplay();
+                UpdateWBSFilter();
+                UpdateCommodityFilter();
             }
         }
         function FilterWBS(){
             selected_wbs = $("#wbs_selector").val();
             if(!page_loading){
-                UpdatePipelineDisplay()
+                UpdatePipelineDisplay();
+                UpdateCommodityFilter();
             }
         }
         function FilterCom(){
             selected_com = $("#commodity_selector").val();
             if(!page_loading){
-                UpdatePipelineDisplay()
+                UpdatePipelineDisplay();
+                {#UpdateRBFilter();#}
+                {#UpdateCountryFilter();#}
+                {#UpdateWBSFilter();#}
             }
         }
 
@@ -174,21 +197,32 @@
                 country_req_data[country.iso] = {"imp_req": 0, "imp_shortfalls": 0};
             }
 
+            selectable_rbs.clear();
+            selectable_countries.clear();
+            selectable_wbss.clear();
+            selectable_commodities.clear();
+
             for (let pip of pipeline_data) {
-                if (selected_com == null || selected_com === "" || selected_com === pip.commodity) {
+
+                if ((selected_rb == null || selected_rb === "" || selected_rb === country_rb[pip.country])
+                    && (selected_country == null || selected_country === "" || selected_country === pip.country)
+                    && (selected_wbs == null || selected_wbs === "" || selected_wbs === pip.wbs)
+                    && (selected_com == null || selected_com === "" || selected_com === pip.commodity)){
+
+                    display_pipeline_data[pip.period].imp_reqs_mt = display_pipeline_data[pip.period].imp_reqs_mt + pip.imp_reqs_mt;
+                    display_pipeline_data[pip.period].imp_resourced_mt = display_pipeline_data[pip.period].imp_resourced_mt + pip.imp_resourced_mt;
+                    display_pipeline_data[pip.period].imp_reqs_fcr = display_pipeline_data[pip.period].imp_reqs_fcr + pip.imp_reqs_fcr;
+                    display_pipeline_data[pip.period].imp_resourced_fcr = display_pipeline_data[pip.period].imp_resourced_fcr + pip.imp_resourced_fcr;
 
                     country_req_data[pip.country].imp_req = country_req_data[pip.country].imp_req + pip.imp_reqs_mt;
                     country_req_data[pip.country].imp_shortfalls = country_req_data[pip.country].imp_shortfalls + (pip.imp_reqs_mt - pip.imp_resourced_mt);
 
-                    if ((selected_rb == null || selected_rb === "" || selected_rb === country_rb[pip.country]) && (selected_country == null || selected_country === "" || selected_country === pip.country) && (selected_wbs == null || selected_wbs === "" || selected_wbs === pip.wbs)) {
-                        display_pipeline_data[pip.period].imp_reqs_mt = display_pipeline_data[pip.period].imp_reqs_mt + pip.imp_reqs_mt;
-                        display_pipeline_data[pip.period].imp_resourced_mt = display_pipeline_data[pip.period].imp_resourced_mt + pip.imp_resourced_mt;
-                        display_pipeline_data[pip.period].imp_reqs_fcr = display_pipeline_data[pip.period].imp_reqs_fcr + pip.imp_reqs_fcr;
-                        display_pipeline_data[pip.period].imp_resourced_fcr = display_pipeline_data[pip.period].imp_resourced_fcr + pip.imp_resourced_fcr;
-                    }
+                    selectable_rbs.add(country_rb[pip.country]);
+                    selectable_countries.add(pip.country);
+                    selectable_wbss.add(pip.wbs);
+                    selectable_commodities.add(pip.commodity);
                 }
             }
-
 
             // update pipeline chart data
             for (let i = 0; i < periods.length; i++) {
@@ -212,6 +246,84 @@
                 }
             }
 
+            if(!page_loading){
+                UpdateMapCircles();
+            }
+
+        }
+
+        function UpdateMapCircles(){
+
+            map_polygonSeries.mapPolygons.each(function (mapPolygon) {
+
+                if (country_isos.has(mapPolygon.id)) {
+                    let country_shortfalls = Math.round(country_req_data[mapPolygon.id].imp_shortfalls);
+                    let polygon = mapPolygon.dummyData;
+
+                    if (country_shortfalls > 0) {
+                        polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 4 * Math.sqrt(country_shortfalls) / Math.sqrt(max_shortfalls));
+                        polygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": " + numberWithCommas(country_shortfalls) + " mt";
+                        mapPolygon.tooltipText = "";
+                        mapPolygon.fillOpacity = 1;
+                    }
+                    else{
+                        polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 0);
+                        polygon.tooltipText = "";
+                        mapPolygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": no shortfalls in selection";
+                        mapPolygon.fillOpacity = 0.3;
+                    }
+                }
+                else {
+                    mapPolygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": no shortfalls";
+                    mapPolygon.fillOpacity = 0.3;
+                }
+
+            });
+        }
+
+        function UpdateRBFilter(){
+
+            let rb_selector = $("#rb_selector");
+            rb_selector.empty();
+            for(let rb of rbs) {
+                if(selectable_rbs.has(rb)){
+                    rb_selector.append("<option value='" + rb + "'>" + rb + "</option>");
+                }
+            }
+            rb_selector.val(null).trigger('change');
+        }
+        function UpdateCountryFilter(){
+
+            let country_selector = $("#country_selector");
+            country_selector.empty();
+            for(let country of countries) {
+                if(selectable_countries.has(country.iso)){
+                    country_selector.append("<option value='" + country.iso + "'>" + country.name + "</option>");
+                }
+            }
+            country_selector.val(null).trigger('change');
+        }
+        function UpdateWBSFilter(){
+
+            let wbs_selector = $("#wbs_selector");
+            wbs_selector.empty();
+            for(let wbs of wbss) {
+                if(selectable_wbss.has(wbs.code)){
+                    wbs_selector.append("<option value='" + wbs.code + "'>" + wbs.code + "</option>");
+                }
+            }
+            wbs_selector.val(null).trigger('change');
+        }
+        function UpdateCommodityFilter(){
+
+            let commodity_selector = $("#commodity_selector");
+            commodity_selector.empty();
+            for(let com of commodities) {
+                if(selectable_commodities.has(com.name)){
+                    commodity_selector.append("<option value='" + com.name + "'>" + com.name + "</option>");
+                }
+            }
+            commodity_selector.val(null).trigger('change');
         }
 
 
@@ -221,18 +333,12 @@
 
         $(document).ready(function() {
 
-            // initiate the filter selectors
-
             let rb_selector = $("#rb_selector");
             rb_selector.select2();
             rb_selector.select2({
                 placeholder: "All regional bureaux",
                 allowClear: true
             });
-            for(let rb of rbs) {
-                rb_selector.append("<option value='" + rb + "'>" + rb + "</option>");
-            }
-            rb_selector.val(null).trigger('change');
 
             let country_selector = $("#country_selector");
             country_selector.select2();
@@ -240,10 +346,6 @@
                 placeholder: "All countries",
                 allowClear: true
             });
-            for(let country of countries) {
-                country_selector.append("<option value='" + country.iso + "'>" + country.name + "</option>");
-            }
-            country_selector.val(null).trigger('change');
 
             let wbs_selector = $("#wbs_selector");
             wbs_selector.select2();
@@ -251,10 +353,6 @@
                 placeholder: "All WBS elements",
                 allowClear: true
             });
-            for(let wbs of wbss) {
-                wbs_selector.append("<option value='" + wbs.code + "'>" + wbs.code + "</option>");
-            }
-            $("#wbs_selector").val(null).trigger('change');
 
             let commodity_selector = $("#commodity_selector");
             commodity_selector.select2();
@@ -262,10 +360,13 @@
                 placeholder: "All commodities",
                 allowClear: true
             });
-            for(let com of commodities) {
-                commodity_selector.append("<option value='" + com.name + "'>" + com.name + "</option>");
-            }
-            commodity_selector.val(null).trigger('change');
+
+            // initiate the filter selectors
+            UpdateRBFilter();
+            UpdateCountryFilter();
+            UpdateWBSFilter();
+            UpdateCommodityFilter();
+
 
 
             /////// build pipeline chart
@@ -279,53 +380,53 @@
             pipeline_chart.dateFormatter.inputDateFormat = "yyyy-MM-dd";
 
             /* Create axes */
-            let dateAxis = pipeline_chart.xAxes.push(new am4charts.DateAxis());
-            dateAxis.start = 0;
-            dateAxis.end = 0.5;
-            dateAxis.keepSelection = true;
+            let pipeline_dateAxis = pipeline_chart.xAxes.push(new am4charts.DateAxis());
+            pipeline_dateAxis.start = 0;
+            pipeline_dateAxis.end = 0.5;
+            pipeline_dateAxis.keepSelection = true;
 
             /* Create value axis */
-            let valueAxis = pipeline_chart.yAxes.push(new am4charts.ValueAxis());
-            valueAxis.min = 0;
+            let pipeline_valueAxis = pipeline_chart.yAxes.push(new am4charts.ValueAxis());
+            pipeline_valueAxis.min = 0;
 
             /* Create series */
-            let columnSeries = pipeline_chart.series.push(new am4charts.ColumnSeries());
-            columnSeries.name = "Resourced";
-            columnSeries.dataFields.valueY = "resourced";
-            columnSeries.dataFields.dateX = "date";
+            let pipeline_columnSeries = pipeline_chart.series.push(new am4charts.ColumnSeries());
+            pipeline_columnSeries.name = "Resourced";
+            pipeline_columnSeries.dataFields.valueY = "resourced";
+            pipeline_columnSeries.dataFields.dateX = "date";
 
-            columnSeries.columns.template.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
-            columnSeries.columns.template.propertyFields.fillOpacity = "fillOpacity";
-            columnSeries.columns.template.propertyFields.stroke = "stroke";
-            columnSeries.columns.template.propertyFields.strokeWidth = "strokeWidth";
-            columnSeries.columns.template.propertyFields.strokeDasharray = "columnDash";
-            columnSeries.tooltip.label.textAlign = "middle";
-            columnSeries.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
-            columnSeries.fill = am4core.color("rgba(3, 88, 106, 0.5)");
+            pipeline_columnSeries.columns.template.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
+            pipeline_columnSeries.columns.template.propertyFields.fillOpacity = "fillOpacity";
+            pipeline_columnSeries.columns.template.propertyFields.stroke = "stroke";
+            pipeline_columnSeries.columns.template.propertyFields.strokeWidth = "strokeWidth";
+            pipeline_columnSeries.columns.template.propertyFields.strokeDasharray = "columnDash";
+            pipeline_columnSeries.tooltip.label.textAlign = "middle";
+            pipeline_columnSeries.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
+            pipeline_columnSeries.fill = am4core.color("rgba(3, 88, 106, 0.5)");
 
 
-            let lineSeries = pipeline_chart.series.push(new am4charts.LineSeries());
-            lineSeries.name = "Implementation Requirements";
-            lineSeries.dataFields.valueY = "req";
-            lineSeries.dataFields.dateX = "date";
+            let pipeline_lineSeries = pipeline_chart.series.push(new am4charts.LineSeries());
+            pipeline_lineSeries.name = "Implementation Requirements";
+            pipeline_lineSeries.dataFields.valueY = "req";
+            pipeline_lineSeries.dataFields.dateX = "date";
 
-            lineSeries.stroke = am4core.color("rgba(38, 185, 154, 0.5)");
-            lineSeries.strokeWidth = 3;
-            lineSeries.propertyFields.strokeDasharray = "lineDash";
-            lineSeries.tooltip.label.textAlign = "middle";
+            pipeline_lineSeries.stroke = am4core.color("rgba(38, 185, 154, 0.5)");
+            pipeline_lineSeries.strokeWidth = 3;
+            pipeline_lineSeries.propertyFields.strokeDasharray = "lineDash";
+            pipeline_lineSeries.tooltip.label.textAlign = "middle";
 
-            let bullet = lineSeries.bullets.push(new am4charts.Bullet());
-            bullet.fill = am4core.color("rgba(38, 185, 154, 0.5)"); // tooltips grab fill from parent by default
-            bullet.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
-            let circle = bullet.createChild(am4core.Circle);
-            circle.radius = 4;
-            circle.fill = am4core.color("#fff");
-            circle.strokeWidth = 3;
+            let pipeline_bullet = pipeline_lineSeries.bullets.push(new am4charts.Bullet());
+            pipeline_bullet.fill = am4core.color("rgba(38, 185, 154, 0.5)"); // tooltips grab fill from parent by default
+            pipeline_bullet.tooltipText = "[#fff font-size: 15px]{name} {categoryX}:\n[/][#fff font-size: 20px]{valueY} mt[/] [#fff]{additional}[/]";
+            let pipeline_circle = pipeline_bullet.createChild(am4core.Circle);
+            pipeline_circle.radius = 4;
+            pipeline_circle.fill = am4core.color("#fff");
+            pipeline_circle.strokeWidth = 3;
 
             // Create a horizontal scrollbar with previe and place it underneath the date axis
             pipeline_chart.scrollbarX = new am4charts.XYChartScrollbar();
-            pipeline_chart.scrollbarX.series.push(columnSeries);
-            pipeline_chart.scrollbarX.series.push(lineSeries);
+            pipeline_chart.scrollbarX.series.push(pipeline_columnSeries);
+            pipeline_chart.scrollbarX.series.push(pipeline_lineSeries);
             pipeline_chart.scrollbarX.parent = pipeline_chart.bottomAxesContainer;
 
 
@@ -350,123 +451,114 @@
             // Add zoom control
             map.zoomControl = new am4maps.ZoomControl();
 
-            var homeButton = new am4core.Button();
-            homeButton.events.on("hit", function(){
+            var map_homeButton = new am4core.Button();
+            map_homeButton.events.on("hit", function(){
               map.goHome();
             });
 
-            homeButton.icon = new am4core.Sprite();
-            homeButton.padding(7, 5, 7, 5);
-            homeButton.width = 30;
-            homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
-            homeButton.marginBottom = 10;
-            homeButton.parent = map.zoomControl;
-            homeButton.insertBefore(map.zoomControl.plusButton);
+            map_homeButton.icon = new am4core.Sprite();
+            map_homeButton.padding(7, 5, 7, 5);
+            map_homeButton.width = 30;
+            map_homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+            map_homeButton.marginBottom = 10;
+            map_homeButton.parent = map.zoomControl;
+            map_homeButton.insertBefore(map.zoomControl.plusButton);
 
 
             // Create map polygon series
-            var polygonSeries = map.series.push(new am4maps.MapPolygonSeries());
+            map_polygonSeries = map.series.push(new am4maps.MapPolygonSeries());
             // Make map load polygon (like country names) data from GeoJSON
-            polygonSeries.useGeodata = true;
-            polygonSeries.calculateVisualCenter = true;
-            polygonSeries.tooltip.background.fillOpacity = 0.2;
-            polygonSeries.tooltip.background.cornerRadius = 20;
+            map_polygonSeries.useGeodata = true;
+            map_polygonSeries.calculateVisualCenter = true;
+            map_polygonSeries.tooltip.background.fillOpacity = 0.2;
+            map_polygonSeries.tooltip.background.cornerRadius = 20;
 
 
             // Configure series
-            var polygonTemplate = polygonSeries.mapPolygons.template;
+            var map_polygonTemplate = map_polygonSeries.mapPolygons.template;
             //polygonTemplate.tooltipText = "{name}";
-            polygonTemplate.fill = am4core.color("rgba(3, 88, 106, 0.5)");
-            polygonTemplate.stroke = am4core.color("rgba(120, 120, 120, 0.5)");
+            map_polygonTemplate.fill = am4core.color("rgba(3, 88, 106, 0.5)");
+            map_polygonTemplate.stroke = am4core.color("rgba(120, 120, 120, 0.5)");
 
-            polygonTemplate.strokeWidth = 0.5;
+            map_polygonTemplate.strokeWidth = 0.5;
             // ? polygonTemplate.nonScalingStroke = true;
 
-            polygonTemplate.propertyFields.id = "id";
-            polygonTemplate.tooltipPosition = "fixed";
-            polygonTemplate.fillOpacity = 1;
+            map_polygonTemplate.propertyFields.id = "id";
+            map_polygonTemplate.tooltipPosition = "fixed";
+            map_polygonTemplate.fillOpacity = 1;
 
-            polygonTemplate.events.on("over", function (event) {
+            map_polygonTemplate.events.on("over", function (event) {
               if (event.target.dummyData) {
                 event.target.dummyData.isHover = true;
               }
             });
-            polygonTemplate.events.on("out", function (event) {
+            map_polygonTemplate.events.on("out", function (event) {
               if (event.target.dummyData) {
                 event.target.dummyData.isHover = false;
               }
             });
 
-            var graticuleSeries = map.series.push(new am4maps.GraticuleSeries());
-            graticuleSeries.mapLines.template.line.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
-            graticuleSeries.mapLines.template.line.strokeOpacity = 0.08;
-            graticuleSeries.fitExtent = false;
+            var map_graticuleSeries = map.series.push(new am4maps.GraticuleSeries());
+            map_graticuleSeries.mapLines.template.line.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
+            map_graticuleSeries.mapLines.template.line.strokeOpacity = 0.08;
+            map_graticuleSeries.fitExtent = false;
 
             map.backgroundSeries.mapPolygons.template.polygon.fillOpacity = 0.1;
             map.backgroundSeries.mapPolygons.template.polygon.fill = am4core.color("#454a58");
 
             // Create hover state and set alternative fill color
-            var hs = polygonTemplate.states.create("hover");
+            var map_hs = map_polygonTemplate.states.create("hover");
             //hs.properties.fill = map.colors.getIndex(0).brighten(-0.5);
-            hs.properties.fillOpacity = 1;
-            hs.properties.fill = am4core.color("rgba(38, 185, 154, 0.7)");
+            map_hs.properties.fillOpacity = 1;
+            map_hs.properties.fill = am4core.color("rgba(38, 185, 154, 0.7)");
+
+            map_circleSeries = map.series.push(new am4maps.MapPolygonSeries());
+            map_circleSeries.tooltip.background.fillOpacity = 0.5;
+            map_circleSeries.tooltip.background.cornerRadius = 20;
+            map_circleSeries.tooltip.autoTextColor = false;
+            map_circleSeries.tooltip.label.fill = am4core.color("#fff");
+            map_circleSeries.tooltip.dy = -5;
+
+            var map_circleTemplate = map_circleSeries.mapPolygons.template;
+            map_circleTemplate.fill = am4core.color("#2e4786");
+            map_circleTemplate.strokeOpacity = 0;
+            map_circleTemplate.fillOpacity = 0.6;
+            map_circleTemplate.tooltipPosition = "fixed";
 
 
+            var map_hs2 = map_circleSeries.mapPolygons.template.states.create("hover");
+            map_hs2.properties.fillOpacity = 1;
+            map_hs2.properties.fill = am4core.color("#2e4786");
 
-            var circleSeries = map.series.push(new am4maps.MapPolygonSeries());
-            circleSeries.tooltip.background.fillOpacity = 0.5;
-            circleSeries.tooltip.background.cornerRadius = 20;
-            circleSeries.tooltip.autoTextColor = false;
-            circleSeries.tooltip.label.fill = am4core.color("#fff");
-            circleSeries.tooltip.dy = -5;
-
-            var circleTemplate = circleSeries.mapPolygons.template;
-            circleTemplate.fill = am4core.color("#2e4786");
-            circleTemplate.strokeOpacity = 0;
-            circleTemplate.fillOpacity = 0.6;
-            circleTemplate.tooltipPosition = "fixed";
-
-
-            var hs2 = circleSeries.mapPolygons.template.states.create("hover");
-            hs2.properties.fillOpacity = 1;
-            hs2.properties.fill = am4core.color("#2e4786");
-
-            polygonSeries.events.on("inited", function () {
-              polygonSeries.mapPolygons.each(function (mapPolygon) {
-                //var req = Math.round(country_req_data[mapPolygon.id]);
-                var country_shortfalls = 0;
+            map_polygonSeries.events.on("inited", function () {
+              map_polygonSeries.mapPolygons.each(function (mapPolygon) {
                 if (country_isos.has(mapPolygon.id)) {
-                    country_shortfalls = Math.round(country_req_data[mapPolygon.id].imp_shortfalls);
-                }
+                    let polygon = map_circleSeries.mapPolygons.create();
+                    polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 1);
+                    mapPolygon.dummyData = polygon;
 
-                if (country_shortfalls > 0) {
-                  var polygon = circleSeries.mapPolygons.create();
-                  polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 5 * Math.sqrt(country_shortfalls) / Math.sqrt(max_shortfalls));
-                  polygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": " + numberWithCommas(country_shortfalls) + " mt";
-                  mapPolygon.dummyData = polygon;
-                  polygon.events.on("over", function () {
-                    mapPolygon.isHover = true;
-                  });
-                  polygon.events.on("out", function () {
-                    mapPolygon.isHover = false;
-                  })
+                    polygon.events.on("over", function () {
+                        mapPolygon.isHover = true;
+                    });
+                    polygon.events.on("out", function () {
+                        mapPolygon.isHover = false;
+                        mapPolygon.fillOpacity = 1;
+                    })
                 }
-                else {
-                  mapPolygon.tooltipText = mapPolygon.dataItem.dataContext.name + ": no shortfalls";
-                  mapPolygon.fillOpacity = 0.3;
-                }
+              });
 
-              })
+                UpdateMapCircles()
             });
 
-            let animation;
+
+            let map_animation;
             setTimeout(function(){
-              animation = map.animate({property:"deltaLongitude", to:100000}, 20000000);
+              map_animation = map.animate({property:"deltaLongitude", to:100000}, 20000000);
             }, 3000);
 
             map.seriesContainer.events.on("down", function(){
-            if(animation){
-              animation.stop();
+            if(map_animation){
+              map_animation.stop();
             }
             });
 
