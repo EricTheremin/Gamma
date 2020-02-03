@@ -317,13 +317,19 @@
         function UpdateCommodityFilter(){
 
             let commodity_selector = $("#commodity_selector");
+            let val_com = $("#commodity_selector").val()
             commodity_selector.empty();
             for(let com of commodities) {
                 if(selectable_commodities.has(com.name)){
                     commodity_selector.append("<option value='" + com.name + "'>" + com.name + "</option>");
                 }
             }
-            commodity_selector.val(null).trigger('change');
+            if(val_com==null){
+                commodity_selector.val(null).trigger('change');
+            }
+            else{
+                commodity_selector.val(val_com).trigger('change');
+            }
         }
 
 
@@ -499,8 +505,8 @@
             });
 
             var map_graticuleSeries = map.series.push(new am4maps.GraticuleSeries());
-            map_graticuleSeries.mapLines.template.line.stroke = am4core.color("rgba(3, 88, 106, 0.5)");
-            map_graticuleSeries.mapLines.template.line.strokeOpacity = 0.08;
+            map_graticuleSeries.mapLines.template.line.stroke = am4core.color("#03677a");
+            map_graticuleSeries.mapLines.template.line.strokeOpacity = 0.05;
             map_graticuleSeries.fitExtent = false;
 
             map.backgroundSeries.mapPolygons.template.polygon.fillOpacity = 0.1;
@@ -510,7 +516,7 @@
             var map_hs = map_polygonTemplate.states.create("hover");
             //hs.properties.fill = map.colors.getIndex(0).brighten(-0.5);
             map_hs.properties.fillOpacity = 1;
-            map_hs.properties.fill = am4core.color("rgba(38, 185, 154, 0.7)");
+            map_hs.properties.fill = am4core.color("#26B99A");
 
             map_circleSeries = map.series.push(new am4maps.MapPolygonSeries());
             map_circleSeries.tooltip.background.fillOpacity = 0.5;
@@ -536,6 +542,7 @@
                     let polygon = map_circleSeries.mapPolygons.create();
                     polygon.multiPolygon = am4maps.getCircle(mapPolygon.visualLongitude, mapPolygon.visualLatitude, 1);
                     mapPolygon.dummyData = polygon;
+                    polygon.dummyData = mapPolygon;
 
                     polygon.events.on("over", function () {
                         mapPolygon.isHover = true;
@@ -550,6 +557,16 @@
                 UpdateMapCircles()
             });
 
+
+            // Event clic on a country or its circle
+            map_polygonTemplate.events.on("hit", function(ev) {
+              //ev.target.series.chart.zoomToMapObject(ev.target);
+              ClickOnCountry(ev.target.id);
+            });
+            map_circleTemplate.events.on("hit", function(ev) {
+              //ev.target.series.chart.zoomToMapObject(ev.target.dummyData);
+              ClickOnCountry(ev.target.dummyData.id);
+            });
 
             let map_animation;
             setTimeout(function(){
@@ -566,6 +583,12 @@
 
             page_loading = false
         });
+
+        function ClickOnCountry(country_iso){
+            if(selectable_countries.has(country_iso)){
+               $("#country_selector").val(country_iso).trigger('change');
+            }
+        }
 
     </script>
 
@@ -943,55 +966,11 @@
                   </div>
                 </div>
 
-                <div class="col-md-9 col-sm-9 ">
+                <div class="col-md-7 col-sm-12 ">
 {#                  <div id="chart_plot_01" class="demo-placeholder"></div>#}
                     <div id="timelineChartDiv" style="width: 100%; height: 400px;"></div>
                 </div>
-                <div class="col-md-3 col-sm-3  bg-white">
-                  <div class="x_title">
-                    <h2>Top Shortfalls</h2>
-                    <div class="clearfix"></div>
-                  </div>
-
-                  <div class="col-md-12 col-sm-12 ">
-                    <div>
-                      <p>ABC</p>
-                      <div class="">
-                        <div class="progress progress_sm" style="width: 76%;">
-                          <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="80"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p>ABC</p>
-                      <div class="">
-                        <div class="progress progress_sm" style="width: 76%;">
-                          <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="60"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-12 col-sm-12 ">
-                    <div>
-                      <p>ABC</p>
-                      <div class="">
-                        <div class="progress progress_sm" style="width: 76%;">
-                          <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="40"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p>ABC</p>
-                      <div class="">
-                        <div class="progress progress_sm" style="width: 76%;">
-                          <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="50"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
+                  <div id="world-map-div" class="col-md-5 col-sm-12" style="width: 100%; height: 400px;"></div>
                 <div class="clearfix"></div>
               </div>
             </div>
@@ -1158,7 +1137,49 @@
                         </tbody>
                       </table>
                     </div>
-                    <div id="world-map-div" class="col-md-8 col-sm-12 " style="height:450px;"></div>
+                    <div class="col-md-8 col-sm-8  bg-white">
+                      <div class="x_title">
+                        <h2>Top Shortfalls</h2>
+                        <div class="clearfix"></div>
+                      </div>
+
+                      <div class="col-md-12 col-sm-12 ">
+                        <div>
+                          <p>ABC</p>
+                          <div class="">
+                            <div class="progress progress_sm" style="width: 76%;">
+                              <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="80"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p>ABC</p>
+                          <div class="">
+                            <div class="progress progress_sm" style="width: 76%;">
+                              <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="60"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12 col-sm-12 ">
+                        <div>
+                          <p>ABC</p>
+                          <div class="">
+                            <div class="progress progress_sm" style="width: 76%;">
+                              <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="40"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p>ABC</p>
+                          <div class="">
+                            <div class="progress progress_sm" style="width: 76%;">
+                              <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="50"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
